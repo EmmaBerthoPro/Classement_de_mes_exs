@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Classement Ultime !</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%; /* Ensure html and body take full height */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex; /* Use flexbox for body */
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top */
+            overflow: hidden; /* Keep overflow hidden for floating emojis */
+        }
+
+        /* Container for floating emojis - fixed to cover the whole viewport */
+        #floatingEmojisContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Clip emojis at the edges */
+            pointer-events: none; /* Allow clicks to pass through to content below */
+            z-index: -1; /* Keep it behind all other content */
+            opacity: 0.7; /* Slightly transparent */
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2.5em; /* Larger emojis */
+            user-select: none; /* Prevent text selection */
+            line-height: 1; /* Prevent extra space around emoji */
+            transition: transform 0.05s linear; /* Smooth movement */
+        }
+
+        /* Main content wrapper to enable scrolling */
+        #mainContentWrapper {
+            height: 100vh; /* Take full viewport height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            width: 100%; /* Take full width */
+            display: flex; /* Use flexbox to center content */
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top within the wrapper */
+            padding: 20px 0; /* Add some padding, adjust as needed */
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            position: relative; /* Ensure it's above floating emojis */
+            z-index: 1;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Horse Race Animation */
+        .race-track-container {
+            width: 95%;
+            margin: 20px auto 40px auto;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden; /* Important to clip participants at the end */
+            min-height: 350px; /* Increased height to accommodate more visible movement */
+        }
+
+        .race-lane {
+            width: 100%;
+            height: 40px;
+            background-color: #f9f9f9;
+            border-radius: 20px;
+            position: absolute; /* Absolute positioning for vertical movement */
+            left: 0; /* Always start at left of container */
+            overflow: hidden; /* Ensures participant stays within its lane visually */
+            border: 1px solid #ccc;
+            transition: transform 0.5s ease-out, z-index 0.3s ease-out; /* Smooth transition for vertical reordering and z-index */
+        }
+
+        .race-participant {
+            position: absolute;
+            left: 0%; /* Start at 0% of its lane */
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap; /* Keep text on one line */
+            background-color: #8bc34a; /* Participant background */
+            border-radius: 20px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            font-size: 1.1em; /* Base font size for race participants */
+            transition: left 0.9s ease-out; /* Smooth horizontal movement over 1 second */
+            min-width: 80px;
+            box-sizing: border-box;
+            z-index: 1; /* Ensure participants are above lane background */
+        }
+
+        .race-participant .emoji {
+            margin-left: 8px;
+            font-size: 1.5em;
+        }
+
+        #raceStartMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: #d32f2f;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 1s ease-out;
+            z-index: 10;
+        }
+
+        /* Ranking List (initially hidden) */
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 40px;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.5s ease-out;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            border-left: 5px solid #4CAF50;
+            font-size: 1.2em; /* Base font size for ranking items */
+        }
+
+        .ranking-item:hover {
+            transform: translateY(-5px);
+            background-color: #e8f5e9;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .rank-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2196F3;
+            min-width: 40px;
+            text-align: left;
+            margin-right: 15px;
+        }
+
+        .rank-name {
+            flex-grow: 1;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .rank-emoji {
+            font-size: 1.8em;
+            margin-left: 15px;
+        }
+
+        .rank-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 3px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Font size adjustments based on user request */
+        .text-smaller {
+            font-size: 0.9em; /* Approx. 10-20% smaller than parent's font-size */
+        }
+        .text-larger {
+            font-size: 1.15em; /* Approx. 15% larger than parent's font-size */
+        }
+
+        /* Hover for #1 */
+        .rank-1-hover {
+            position: relative;
+            cursor: help;
+        }
+
+        .rank-1-hover::after {
+            content: "des cuni divins + abdos"; /* Updated hover text */
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+
+        .rank-1-hover:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Pop-up styles */
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .popup-content p {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #d32f2f;
+            margin: 20px 0;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .vote-button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 30px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        .vote-button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        /* Honorable Mentions */
+        .honorable-mention {
+            margin-top: 50px;
+            padding: 25px;
+            background-color: #f1f8e9;
+            border-radius: 10px;
+            border: 1px dashed #aed581;
+            color: #4CAF50;
+            text-align: left;
+        }
+
+        .honorable-mention h2 {
+            color: #388e3c;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .honorable-mention p {
+            margin-bottom: 8px;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        /* Media Query for smaller screens (e.g., mobile) */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px; /* Reduce padding on smaller screens */
+            }
+
+            h1 {
+                font-size: 2em; /* Smaller title */
+            }
+
+            .race-participant, .ranking-item {
+                font-size: 1em; /* Base font size for mobile participants */
+            }
+
+            .race-participant .text-smaller,
+            .ranking-item .text-smaller {
+                font-size: 0.75em; /* Even smaller for specific long names */
+            }
+
+            .race-participant .text-larger,
+            .ranking-item .text-larger {
+                font-size: 1.05em; /* Slightly smaller for larger names on mobile */
+            }
+
+            .rank-image {
+                width: 50px;
+                height: 50px;
+            }
+
+            .rank-emoji {
+                font-size: 1.6em;
+            }
+
+            .vote-button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+
+            .popup-content {
+                width: 90%; /* Wider pop-up on mobile */
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="floatingEmojisContainer"></div>
+
+    <div id="mainContentWrapper">
+        <div class="container">
+            <h1>🏆 Le Classement Ultime ! 🏆</h1>
+
+            <div id="raceTrackContainer" class="race-track-container">
+                <div id="raceStartMessage">Départ !</div>
+                </div>
+
+            <ul id="ranking-list" class="ranking-list">
+                </ul>
+
+            <button id="voteButton" class="vote-button">Voter pour ton préféré !</button>
+
+            <div id="popup" class="popup">
+                <div class="popup-content">
+                    <span class="close-button">&times;</span>
+                    <p>T'es sorti avec ? Non ? Bah TG.</p>
+                </div>
+            </div>
+
+            <div class="honorable-mention">
+                <h2>Mentions Honorables :</h2>
+                <p>• Le stagiaire qui a tenu 3 mois.</p>
+                <p>• Le chat du voisin qui traverse ton jardin tous les jours.</p>
+                <p>• La pizza de la veille, toujours là pour toi.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rankingList = document.getElementById('ranking-list');
+            const raceTrackContainer = document.getElementById('raceTrackContainer');
+            const raceStartMessage = document.getElementById('raceStartMessage');
+            const voteButton = document.getElementById('voteButton');
+            const popup = document.getElementById('popup');
+            const closeButton = document.querySelector('.close-button');
+            const floatingEmojisContainer = document.getElementById('floatingEmojisContainer');
+
+            // The desired final ranking order
+            const finalRankingOrder = [
+                { name: 'Adam', emoji: '🤤', image: 'https://placehold.co/60x60/FFD700/000000?text=Adam', size: 'larger' },
+                { name: 'Paul', emoji: '⚡', image: 'https://placehold.co/60x60/87CEEB/000000?text=Paul', size: 'larger' },
+                { name: 'Maxime', emoji: '🚀', image: 'https://placehold.co/60x60/FF6347/000000?text=Maxime', size: 'larger' },
+                { name: 'Adam pauvre', emoji: '💲', image: 'https://placehold.co/60x60/9ACD32/000000?text=AdamPoor', size: 'smaller' }, // Changed emoji to coin
+                { name: 'Ivaylo', emoji: '💡', image: 'https://placehold.co/60x60/DDA0DD/000000?text=Ivaylo', size: 'larger' },
+                { name: 'le type au musée', emoji: '🏛️', image: 'https://placehold.co/60x60/BC8F8F/000000?text=MuseumGuy', size: 'smaller' }, // Changed name
+            ];
+
+            // Floating Emojis Configuration
+            const floatingEmojisData = [
+                { emoji: '🦆', weight: 20 },
+                { emoji: '💔', weight: 20 },
+                { emoji: '😭', weight: 20 },
+                { emoji: '🔥', weight: 20 },
+                { emoji: '🍆', weight: 5 },
+                { emoji: '🤮', weight: 5 },
+                { emoji: '😷', weight: 5 },
+                { emoji: '💩', weight: 5 }
+            ];
+            const maxFloatingEmojis = 50; // Increased to 50 emojis
+            const floatingEmojiSpeed = 2.5; // Multiplied by 5 (0.5 * 5 = 2.5) Pixels per frame
+            const bounceRandomness = 0.1; // How much random variation on bounce angle
+
+            let activeFloatingEmojis = []; // Array to hold active emoji objects
+
+            // Function to get a random emoji based on weights
+            const getRandomEmoji = () => {
+                const totalWeight = floatingEmojisData.reduce((sum, item) => sum + item.weight, 0);
+                let randomNum = Math.random() * totalWeight;
+                for (const item of floatingEmojisData) {
+                    if (randomNum < item.weight) {
+                        return item.emoji;
+                    }
+                    randomNum -= item.weight;
+                }
+                return floatingEmojisData[0].emoji; // Fallback
+            };
+
+            // Function to create a single floating emoji
+            const createFloatingEmoji = () => {
+                const emoji = getRandomEmoji();
+                const emojiElement = document.createElement('div');
+                emojiElement.classList.add('floating-emoji');
+                emojiElement.textContent = emoji;
+                floatingEmojisContainer.appendChild(emojiElement);
+
+                const emojiSize = parseInt(window.getComputedStyle(emojiElement).fontSize); // Get actual rendered size
+                
+                const x = Math.random() * (window.innerWidth - emojiSize);
+                const y = Math.random() * (window.innerHeight - emojiSize);
+                
+                // Random initial direction and speed
+                const angle = Math.random() * 2 * Math.PI;
+                const dx = Math.cos(angle) * floatingEmojiSpeed;
+                const dy = Math.sin(angle) * floatingEmojiSpeed;
+
+                activeFloatingEmojis.push({
+                    element: emojiElement,
+                    x: x,
+                    y: y,
+                    dx: dx,
+                    dy: dy,
+                    size: emojiSize
+                });
+            };
+
+            // Animation loop for floating emojis
+            const animateFloatingEmojis = () => {
+                activeFloatingEmojis.forEach(emoji => {
+                    emoji.x += emoji.dx;
+                    emoji.y += emoji.dy;
+
+                    // Handle horizontal bounds
+                    if (emoji.x + emoji.size > window.innerWidth) {
+                        emoji.x = window.innerWidth - emoji.size; // Place exactly at boundary
+                        emoji.dx = -Math.abs(emoji.dx) * (1 + (Math.random() * bounceRandomness)); // Reverse and add randomness
+                    } else if (emoji.x < 0) {
+                        emoji.x = 0; // Place exactly at boundary
+                        emoji.dx = Math.abs(emoji.dx) * (1 + (Math.random() * bounceRandomness)); // Reverse and add randomness
+                    }
+
+                    // Handle vertical bounds
+                    if (emoji.y + emoji.size > window.innerHeight) {
+                        emoji.y = window.innerHeight - emoji.size; // Place exactly at boundary
+                        emoji.dy = -Math.abs(emoji.dy) * (1 + (Math.random() * bounceRandomness)); // Reverse and add randomness
+                    } else if (emoji.y < 0) {
+                        emoji.y = 0; // Place exactly at boundary
+                        emoji.dy = Math.abs(emoji.dy) * (1 + (Math.random() * bounceRandomness)); // Reverse and add randomness
+                    }
+
+                    emoji.element.style.left = `${emoji.x}px`;
+                    emoji.element.style.top = `${emoji.y}px`;
+                });
+
+                requestAnimationFrame(animateFloatingEmojis);
+            };
+
+            // Initialize floating emojis
+            for (let i = 0; i < maxFloatingEmojis; i++) {
+                createFloatingEmoji();
+            }
+            animateFloatingEmojis(); // Start the floating emoji animation
+
+            // Function to render the final ranking list
+            const renderFinalRanking = (ranking) => {
+                rankingList.innerHTML = '';
+                ranking.forEach((item, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('ranking-item');
+                    if (index === 0) {
+                        listItem.classList.add('rank-1-hover');
+                    }
+                    // Apply font size class to the rank-name span
+                    const nameClass = item.size === 'smaller' ? 'text-smaller' : (item.size === 'larger' ? 'text-larger' : '');
+                    listItem.innerHTML = `
+                        <span class="rank-number">${index + 1}.</span>
+                        <img src="${item.image}" alt="${item.name}" class="rank-image" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=N/A';">
+                        <span class="rank-name ${nameClass}">${item.name}</span>
+                        <span class="rank-emoji">${item.emoji}</span>
+                    `;
+                    rankingList.appendChild(listItem);
+                });
+            };
+
+            // Function to create and animate the race track
+            const simulateRankingRace = () => {
+                raceTrackContainer.innerHTML = ''; // Clear previous race elements
+                raceTrackContainer.appendChild(raceStartMessage); // Re-add message if cleared
+                raceTrackContainer.style.display = 'block'; // Use block to manage absolute positioning
+                rankingList.style.opacity = '0'; // Hide final ranking list
+
+                const raceDuration = 10; // Race duration in seconds
+                const halfwayPoint = Math.floor(raceDuration / 2); // Halfway point in seconds
+                const finalConvergenceSeconds = 2; // Last 2 seconds for convergence
+                const laneHeight = 40; // Height of each race lane
+                const laneGap = 10; // Gap between lanes
+                const totalLaneHeight = laneHeight + laneGap;
+
+                let currentSecond = 0;
+                let intervalId; // For setInterval
+
+                // Prepare participants with dynamic properties for the race
+                const raceParticipants = finalRankingOrder.map((item, index) => ({
+                    ...item,
+                    currentProgress: Math.random() * 0.1, // Start with varied progress (0-10%)
+                    speedPerSecond: (Math.random() * 0.05) + 0.05, // Speed in % of track per second (0.05% to 0.10%)
+                    initialRankIndex: index, // Store original index to guide final order
+                    laneElement: null, // Will store the DOM element for the entire lane
+                    participantElement: null // Will store the DOM element for the moving participant
+                }));
+
+                // Shuffle the initial display order for a more random start visually
+                const shuffledInitialOrder = [...raceParticipants].sort(() => Math.random() - 0.5);
+
+                // Create race lanes and participants
+                shuffledInitialOrder.forEach((p, index) => {
+                    const lane = document.createElement('div');
+                    lane.classList.add('race-lane');
+                    // Set initial top position based on shuffled order
+                    lane.style.transform = `translateY(${index * totalLaneHeight}px)`;
+                    p.laneElement = lane;
+
+                    const participantDiv = document.createElement('div');
+                    participantDiv.classList.add('race-participant');
+                    // Apply font size class to the participant name
+                    const nameClass = p.size === 'smaller' ? 'text-smaller' : (p.size === 'larger' ? 'text-larger' : '');
+                    participantDiv.innerHTML = `<span class="${nameClass}">${p.name}</span> <span class="emoji">${p.emoji}</span>`;
+                    p.participantElement = participantDiv;
+
+                    lane.appendChild(participantDiv);
+                    raceTrackContainer.appendChild(lane);
+                });
+
+                // Adjust race track container height to fit all lanes
+                raceTrackContainer.style.height = `${raceParticipants.length * totalLaneHeight}px`;
+
+
+                // Show "Départ!" message and fade it out
+                raceStartMessage.style.opacity = '1';
+                setTimeout(() => {
+                    raceStartMessage.style.opacity = '0';
+                }, 1500); // Message visible for 1.5 seconds
+
+                // --- Main Animation Loop (updates every second) ---
+                intervalId = setInterval(() => {
+                    currentSecond++;
+                    const raceTrackWidth = raceTrackContainer.offsetWidth;
+
+                    if (currentSecond <= raceDuration) {
+                        raceParticipants.forEach(p => {
+                            // Special logic for Adam (the final #1)
+                            if (p.name === 'Adam') {
+                                if (currentSecond <= halfwayPoint) {
+                                    // Keep Adam at the back until halfway
+                                    p.speedPerSecond = Math.random() * 0.01; // Very slow speed
+                                    if (p.currentProgress > 0.05) p.currentProgress = 0.05; // Cap his progress to stay behind
+                                } else if (currentSecond <= raceDuration - finalConvergenceSeconds) {
+                                    // After halfway, make Adam super fast
+                                    p.speedPerSecond = (Math.random() * 0.15) + 0.15; // Very high speed
+                                } else {
+                                    // Final convergence for Adam
+                                    const remainingSeconds = raceDuration - currentSecond + 1;
+                                    if (remainingSeconds > 0) {
+                                        const targetFinalProgressForRank = 1 - (p.initialRankIndex * 0.02);
+                                        p.speedPerSecond = (targetFinalProgressForRank - p.currentProgress) / remainingSeconds;
+                                        p.speedPerSecond = Math.max(0.001, Math.min(0.2, p.speedPerSecond));
+                                    } else {
+                                        p.speedPerSecond = 0;
+                                    }
+                                }
+                            } else if (p.name === 'Adam pauvre') {
+                                // Ensure Adam pauvre stays behind and never leads
+                                p.speedPerSecond = (Math.random() * 0.015) + 0.01; // Consistently low speed
+                                // Ensure it never gets too far ahead, especially of the actual Adam
+                                if (p.currentProgress > 0.80) { // Cap its max progress to 80%
+                                    p.currentProgress = 0.80;
+                                    p.speedPerSecond = 0; // Stop it if it hits the cap
+                                }
+                            }
+                            else {
+                                // Logic for other participants
+                                if (currentSecond <= raceDuration - finalConvergenceSeconds) {
+                                    // During most of the race, speeds fluctuate randomly
+                                    p.speedPerSecond += (Math.random() - 0.5) * 0.02; // Stronger fluctuation
+                                    p.speedPerSecond = Math.max(0.03, Math.min(0.12, p.speedPerSecond)); // Wider speed range
+                                } else {
+                                    // During the final convergence, guide progress directly to target final position
+                                    const remainingSeconds = raceDuration - currentSecond + 1;
+                                    if (remainingSeconds > 0) {
+                                        const targetFinalProgressForRank = 1 - (p.initialRankIndex * 0.02);
+                                        p.speedPerSecond = (targetFinalProgressForRank - p.currentProgress) / remainingSeconds;
+                                        p.speedPerSecond = Math.max(0.001, Math.min(0.2, p.speedPerSecond));
+                                    } else {
+                                        p.speedPerSecond = 0;
+                                    }
+                                }
+                            }
+
+                            // Update progress for this second
+                            p.currentProgress += p.speedPerSecond;
+                            p.currentProgress = Math.min(1, Math.max(0, p.currentProgress)); // Clamp to 0-1 range
+
+                            // Update horizontal position
+                            const participantWidth = p.participantElement.offsetWidth;
+                            const maxLeft = raceTrackWidth - participantWidth - 10; // 10px buffer from the right edge
+                            const targetLeftPx = p.currentProgress * maxLeft;
+                            p.participantElement.style.left = `${targetLeftPx}px`;
+                        });
+
+                        // Sort participants based on their current horizontal progress (highest progress first)
+                        // This determines their CURRENT VISUAL RANK
+                        raceParticipants.sort((a, b) => b.currentProgress - a.currentProgress);
+
+                        // Update vertical position (Y-axis) and z-index based on current visual rank
+                        raceParticipants.forEach((p, index) => {
+                            const targetY = index * totalLaneHeight;
+                            p.laneElement.style.transform = `translateY(${targetY}px)`;
+                            // Set z-index so higher ranked elements are on top during overlaps
+                            p.laneElement.style.zIndex = raceParticipants.length - index;
+                        });
+
+                    } else {
+                        // Race finished
+                        clearInterval(intervalId); // Stop the interval
+
+                        // Ensure final positions are exactly as desired
+                        raceParticipants.forEach(p => {
+                            p.currentProgress = 1 - (p.initialRankIndex * 0.02); // Final progress for the final rank
+                            const participantWidth = p.participantElement.offsetWidth;
+                            const maxLeft = raceTrackContainer.offsetWidth - participantWidth - 10;
+                            p.participantElement.style.left = `${p.currentProgress * maxLeft}px`;
+                        });
+
+                        // Final sort and display for the absolute end
+                        raceParticipants.sort((a, b) => b.currentProgress - a.currentProgress);
+                        raceParticipants.forEach((p, index) => {
+                            const targetY = index * totalLaneHeight;
+                            p.laneElement.style.transform = `translateY(${targetY}px)`;
+                            p.laneElement.style.zIndex = raceParticipants.length - index;
+                        });
+
+                        // Delay showing final ranking slightly to let transitions finish
+                        setTimeout(() => {
+                            raceTrackContainer.style.display = 'none';
+                            renderFinalRanking(finalRankingOrder); // Render the final ranking in correct order
+                            rankingList.style.opacity = '1';
+                        }, 500); // 0.5 second delay to allow CSS transitions to complete
+                    }
+                }, 1000); // Update every 1000 milliseconds (1 second)
+            };
+
+            // Initialize the race when the page loads
+            simulateRankingRace();
+
+            // Pop-up functionality
+            voteButton.addEventListener('click', () => {
+                popup.style.display = 'flex'; // Show the pop-up
+            });
+
+            closeButton.addEventListener('click', () => {
+                popup.style.display = 'none'; // Hide the pop-up
+            });
+
+            // Hide pop-up if clicked outside the content
+            window.addEventListener('click', (event) => {
+                if (event.target === popup) {
+                    popup.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
